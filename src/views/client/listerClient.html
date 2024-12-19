@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Clients</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            background-color: white;
+            cursor: pointer;
+        }
+        .pagination button.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .pagination button:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Liste des Clients</h1>
+    <form id="search-form">
+        <label for="search">Rechercher par téléphone :</label>
+        <input type="text" id="search" name="search">
+        <button type="submit">Rechercher</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Adresse</th>
+                <th>Téléphone</th>
+                <th>Dette associée</th>
+            </tr>
+        </thead>
+        <tbody id="client-list">
+            <!-- Les clients seront insérés ici dynamiquement -->
+        </tbody>
+    </table>
+
+    <div class="pagination" id="pagination">
+        <!-- Les boutons de pagination seront générés dynamiquement -->
+    </div>
+
+    <script>
+        let currentPage = 1;
+
+        async function fetchClients(page = 1, search = '') {
+            try {
+                const response = await fetch(`/api/client?page=${page}&search=${search}`);
+                const data = await response.json();
+
+                // Mettre à jour la liste des clients
+                const clientList = document.getElementById('client-list');
+                clientList.innerHTML = '';
+                data.clients.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${client.id}</td>
+                        <td>${client.surname}</td>
+                        <td>${client.adresse}</td>
+                        <td>${client.telephone}</td>
+                        <td>${client.dette ? client.dette.amount : 'Aucune dette'}</td>
+                    `;
+                    clientList.appendChild(row);
+                });
+
+                // Mettre à jour la pagination
+                updatePagination(data.current_page, data.total_pages);
+            } catch (error) {
+                alert('Erreur lors du chargement des clients');
+            }
+        }
+
+        function updatePagination(current, total) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            for (let i = 1; i <= total; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.classList.toggle('active', i === current);
+                button.addEventListener('click', () => fetchClients(i));
+                pagination.appendChild(button);
+            }
+        }
+
+        document.getElementById('search-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const search = document.getElementById('search').value;
+            fetchClients(1, search);
+        });
+
+        // Charger les clients par défaut
+        fetchClients();
+    </script>
+</body>
+</html>
